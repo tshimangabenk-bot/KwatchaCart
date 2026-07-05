@@ -14,24 +14,24 @@ services:
         value: 'true'
       - key: DATABASE_PATH
         value: /data/kwatchacart.sqlite
-      # Set these to your Render URL, e.g. https://kwatchacart.onrender.com
-      - key: PUBLIC_BASE_URL
-        sync: false
-      - key: WEB_BASE_URL
-        sync: false
-      # Secrets — set in the dashboard.
+      # PUBLIC_BASE_URL / WEB_BASE_URL are auto-derived from Render's injected
+      # RENDER_EXTERNAL_URL, so no manual URL setup is needed. To use a custom
+      # domain, add PUBLIC_BASE_URL and WEB_BASE_URL here with that URL.
+      # Secrets — auto-generated; no action needed.
       - key: AUTH_JWT_SECRET
         generateValue: true
       - key: PAYMENT_WEBHOOK_SECRET
         generateValue: true
+      # Start on the mock payment provider; switch to mtn/pawapay later.
       - key: PAYMENT_PROVIDER
         value: mock
+      # WhatsApp: leave unset to run in console mode; fill in to go live.
       - key: WHATSAPP_TOKEN
         sync: false
       - key: WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: WHATSAPP_VERIFY_TOKEN
-        sync: false
+        value: kwatchacart-verify
     disk:
       name: kwatchacart-data
       mountPath: /data

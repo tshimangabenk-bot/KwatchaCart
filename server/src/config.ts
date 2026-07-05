@@ -24,10 +24,12 @@ export type PaymentProviderName = 'mock' | 'mtn' | 'pawapay';
 
 export const config = {
   port: int('PORT', 4000),
-  publicBaseUrl: str('PUBLIC_BASE_URL', 'http://localhost:4000'),
+  // On Render, RENDER_EXTERNAL_URL is injected automatically, so the public
+  // origin (and same-origin catalog links) work with zero manual config.
+  publicBaseUrl: str('PUBLIC_BASE_URL', str('RENDER_EXTERNAL_URL', 'http://localhost:4000')),
   // In dev the SPA runs on :5173. In a single-service deploy the backend serves
-  // the SPA itself, so set WEB_BASE_URL to the public origin (see DEPLOY.md).
-  webBaseUrl: str('WEB_BASE_URL', 'http://localhost:5173'),
+  // the SPA itself; falls back to the platform URL (e.g. Render) automatically.
+  webBaseUrl: str('WEB_BASE_URL', str('RENDER_EXTERNAL_URL', 'http://localhost:5173')),
   databasePath: str('DATABASE_PATH', path.resolve(__dirname, '..', 'data', 'kwatchacart.sqlite')),
 
   // Serve the built web app from Express. 'auto' = serve when web/dist exists.

@@ -73,13 +73,38 @@ docker compose up --build -d
 # open http://localhost:4000
 ```
 
-### Option B — Render (blueprint included)
+### Option B — Render (blueprint included) ⭐ recommended
 
-1. Push this repo to GitHub.
-2. In Render: **New → Blueprint**, select the repo (it reads [`render.yaml`](./render.yaml)).
-3. Set `PUBLIC_BASE_URL` and `WEB_BASE_URL` to your Render URL
-   (e.g. `https://kwatchacart.onrender.com`) and fill the WhatsApp vars.
-4. Deploy. A 1 GB disk is mounted at `/data` for the SQLite database.
+The repo ships a [`render.yaml`](./render.yaml) blueprint. It auto-generates the
+secrets (`AUTH_JWT_SECRET`, `PAYMENT_WEBHOOK_SECRET`) and derives the public URL
+from Render's injected `RENDER_EXTERNAL_URL`, so the app comes up running in
+**console + mock mode with no manual env setup**.
+
+**Step by step:**
+
+1. **Get the code on a branch Render can see.** Merge PR #1 into `main` (the
+   one-click button uses the default branch), *or* keep the feature branch and
+   select it in step 3.
+2. Go to the [Render dashboard](https://dashboard.render.com) → **New → Blueprint**
+   (or click the **Deploy to Render** button in the README).
+3. Connect this GitHub repo. Render detects `render.yaml`. Pick the branch, then
+   **Apply**.
+4. Render builds the Docker image, mounts a 1 GB disk at `/data` for the SQLite
+   database, and starts the service with a `/health` check. First build takes a
+   few minutes.
+5. Open the assigned URL (e.g. `https://kwatchacart.onrender.com`). You should
+   see the KwatchaCart landing page. `GET /health` returns `{"status":"ok",...}`.
+
+That's a fully working demo. To go live for real, continue to §3 (WhatsApp) and
+§4 (Mobile Money) below and add those env vars in the Render dashboard.
+
+> **Plan note:** persistent disks require a paid instance type (the blueprint
+> uses `starter`). On the **free** plan, remove the `disk:` block and set
+> `plan: free` — the SQLite DB will then reset on each redeploy (fine for a
+> throwaway demo, not for real data).
+>
+> **Custom domain:** add `PUBLIC_BASE_URL` and `WEB_BASE_URL` env vars set to
+> your domain; otherwise the Render URL is used automatically.
 
 ### Option C — Railway / Fly.io / VPS
 

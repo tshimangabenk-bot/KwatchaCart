@@ -238,6 +238,15 @@ A `Dockerfile`, `docker-compose.yml` and a Render `render.yaml` blueprint are
 included. See **[DEPLOY.md](./DEPLOY.md)** for full hosting steps and how to wire
 up the WhatsApp Cloud API webhook and the MoMo (MTN/PawaPay) payment callback.
 
+### One-click deploy to Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/tshimangabenk-bot/KwatchaCart)
+
+The blueprint auto-generates secrets and derives the public URL from Render's
+`RENDER_EXTERNAL_URL`, so it comes up running in console + mock mode with **zero
+manual config**. (The button deploys the repo's default branch — merge your
+changes to `main` first, or pick the branch in the Render dashboard.)
+
 ## 🧪 Tests
 
 ```bash
