@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { formatNgwee, parsePriceToNgwee } from '../lib/money.js';
-import { requireAuth } from '../middleware/requireAuth.js';
+import { requireAuth, requireVerified } from '../middleware/requireAuth.js';
 import {
   createProduct,
   getProductById,
@@ -51,7 +51,7 @@ const createSchema = z.object({
   description: z.string().trim().max(280).optional(),
 });
 
-meRouter.post('/products', (req, res) => {
+meRouter.post('/products', requireVerified, (req, res) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'Product name and price are required.' });

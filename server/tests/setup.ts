@@ -9,3 +9,5 @@ process.env.PUBLIC_BASE_URL = 'http://api.test';
 // Ensure WhatsApp runs in console mode (no outbound HTTP).
 process.env.WHATSAPP_TOKEN = '';
 process.env.WHATSAPP_PHONE_NUMBER_ID = '';
+// Keep tests fast/deterministic — no throttling.
+process.env.RATE_LIMIT_ENABLED = 'false';

@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express, { type Express } from 'express';
+import helmet from 'helmet';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config, whatsappLive } from './config.js';
@@ -11,8 +12,13 @@ import { whatsappRouter } from './routes/whatsapp.js';
 
 export function createApp(): Express {
   const app = express();
+  // Trust the reverse proxy (Render/Fly/Nginx) so client IPs & rate limits work.
+  app.set('trust proxy', 1);
+  // Security headers. CSP is disabled to avoid blocking the bundled SPA assets;
+  // enable and tune a policy if you serve the frontend separately.
+  app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: '1mb' }));
 
   app.get('/health', (_req, res) => {
     res.json({

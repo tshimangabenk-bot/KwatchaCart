@@ -34,6 +34,9 @@ export const config = {
   serveWeb: str('SERVE_WEB', 'auto'),
   webDistPath: str('WEB_DIST_PATH', path.resolve(__dirname, '..', '..', 'web', 'dist')),
 
+  // Rate limiting (disabled in tests to keep them fast/deterministic).
+  rateLimitEnabled: str('RATE_LIMIT_ENABLED', 'true') !== 'false',
+
   whatsapp: {
     token: str('WHATSAPP_TOKEN', ''),
     phoneNumberId: str('WHATSAPP_PHONE_NUMBER_ID', ''),

@@ -101,7 +101,18 @@ describe('login + protected dashboard', () => {
     const noAuth = await request(app).get('/api/me/products');
     expect(noAuth.status).toBe(401);
 
-    // Add a product with the token.
+    // Unverified vendors cannot publish products yet.
+    const blocked = await request(app)
+      .post('/api/me/products')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Beans', price: 'K50' });
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.code).toBe('not_verified');
+
+    // Verify via the WhatsApp OTP, then adding products works.
+    const code = latestOtpCode('260966123456')!;
+    await request(app).post('/api/auth/verify-otp').send({ phone: '0966123456', code });
+
     const add = await request(app)
       .post('/api/me/products')
       .set('Authorization', `Bearer ${token}`)

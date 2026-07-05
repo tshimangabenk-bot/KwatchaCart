@@ -6,9 +6,13 @@ import { completeVerification, login, sendVerificationCode, signup } from '../se
 import { checkOtp } from '../services/otp.js';
 import { getVendorByPhone } from '../services/vendors.js';
 import { requireAuth } from '../middleware/requireAuth.js';
+import { authLimiter } from '../middleware/rateLimit.js';
 import type { Vendor } from '../types.js';
 
 export const authRouter = Router();
+
+// Throttle all auth endpoints (signup/login/OTP) against abuse.
+authRouter.use(authLimiter);
 
 export function serializeVendorAccount(v: Vendor) {
   return {

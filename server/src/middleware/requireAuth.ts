@@ -37,3 +37,19 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   req.vendor = vendor;
   next();
 }
+
+/**
+ * Require the vendor's WhatsApp number to be verified. Use after requireAuth for
+ * actions that put a shop live (e.g. publishing products). Returns 403 with a
+ * machine-readable code so the UI can prompt for verification.
+ */
+export function requireVerified(req: Request, res: Response, next: NextFunction): void {
+  if (req.vendor?.verified !== 1) {
+    res.status(403).json({
+      error: 'Verify your WhatsApp number before adding products.',
+      code: 'not_verified',
+    });
+    return;
+  }
+  next();
+}

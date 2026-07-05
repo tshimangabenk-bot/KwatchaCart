@@ -6,6 +6,7 @@ import { createOrder, getOrderById, orderNumber } from '../services/orders.js';
 import { getProductById, listProducts } from '../services/products.js';
 import { getVendorBySlug } from '../services/vendors.js';
 import { initiatePayment } from '../payments/index.js';
+import { checkoutLimiter } from '../middleware/rateLimit.js';
 import type { Order, Product, Vendor } from '../types.js';
 
 export const apiRouter = Router();
@@ -66,7 +67,7 @@ const checkoutSchema = z.object({
 });
 
 /** The "two-tap" checkout: create the order and trigger the MoMo PIN push. */
-apiRouter.post('/checkout', async (req, res) => {
+apiRouter.post('/checkout', checkoutLimiter, async (req, res) => {
   const parsed = checkoutSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'invalid request', details: parsed.error.flatten() });
