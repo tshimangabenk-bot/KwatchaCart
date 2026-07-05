@@ -1,5 +1,7 @@
 # 🛒 KwatchaCart
 
+[![CI](https://github.com/tshimangabenk-bot/KwatchaCart/actions/workflows/ci.yml/badge.svg)](https://github.com/tshimangabenk-bot/KwatchaCart/actions/workflows/ci.yml)
+
 **Zero-friction micro-ecommerce for Zambian market vendors — sell on WhatsApp, get paid with Mobile Money.**
 
 KwatchaCart lets a small market vendor in Lusaka (e.g. Kamwala) list products, take
@@ -63,7 +65,15 @@ fits the WhatsApp-first theme:
   shareable catalog link, and view recent orders.
 
 Passwords are hashed with **bcrypt**; sessions are **JWTs**; OTP codes are hashed at
-rest, expire (default 10 min) and are rate-limited.
+rest, expire (default 10 min) and are rate-limited. Vendors must **verify their
+WhatsApp number before publishing products**.
+
+### Security
+- **helmet** security headers on every response
+- **Rate limiting**: auth endpoints (20 / 15 min) and checkout (15 / min)
+- Passwords via **bcrypt**, sessions via signed **JWT**
+- OTPs hashed at rest, expiring and attempt-limited
+- Payment webhooks authenticated with a shared secret; settlement is idempotent
 
 ### Phase 3 — Seamless MoMo integration
 Hitting **Pay** creates an order and triggers an **STK / USSD PIN push** on the customer's
