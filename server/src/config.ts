@@ -35,6 +35,13 @@ export const config = {
     apiVersion: str('WHATSAPP_API_VERSION', 'v21.0'),
   },
 
+  auth: {
+    jwtSecret: str('AUTH_JWT_SECRET', 'dev-insecure-jwt-secret-change-me'),
+    // Session lifetime for issued JWTs, e.g. "7d", "12h".
+    tokenTtl: str('AUTH_TOKEN_TTL', '7d'),
+    otpTtlMinutes: int('AUTH_OTP_TTL_MINUTES', 10),
+  },
+
   payments: {
     provider: str('PAYMENT_PROVIDER', 'mock') as PaymentProviderName,
     webhookSecret: str('PAYMENT_WEBHOOK_SECRET', 'change-me-payment-secret'),

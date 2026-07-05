@@ -37,12 +37,32 @@ export function getOrCreateVendor(phone: string, name?: string): Vendor {
     name: displayName,
     phone,
     slug: uniqueSlug(slugify(displayName)),
+    password_hash: null,
+    verified: 0,
     created_at: new Date().toISOString(),
   };
   getDb()
-    .prepare('INSERT INTO vendors (id, name, phone, slug, created_at) VALUES (?, ?, ?, ?, ?)')
-    .run(vendor.id, vendor.name, vendor.phone, vendor.slug, vendor.created_at);
+    .prepare(
+      'INSERT INTO vendors (id, name, phone, slug, password_hash, verified, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    )
+    .run(
+      vendor.id,
+      vendor.name,
+      vendor.phone,
+      vendor.slug,
+      vendor.password_hash,
+      vendor.verified,
+      vendor.created_at,
+    );
   return vendor;
+}
+
+export function setVendorPassword(vendorId: string, passwordHash: string): void {
+  getDb().prepare('UPDATE vendors SET password_hash = ? WHERE id = ?').run(passwordHash, vendorId);
+}
+
+export function markVendorVerified(vendorId: string): void {
+  getDb().prepare('UPDATE vendors SET verified = 1 WHERE id = ?').run(vendorId);
 }
 
 export function renameVendor(vendorId: string, name: string): Vendor | undefined {

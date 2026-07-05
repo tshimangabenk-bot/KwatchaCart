@@ -5,6 +5,10 @@ export interface Vendor {
   phone: string;
   /** URL-friendly storefront handle, e.g. "mary-kamwala" */
   slug: string;
+  /** bcrypt hash; null for vendors auto-created via WhatsApp (no web login yet). */
+  password_hash: string | null;
+  /** 1 once the phone number has been confirmed via a WhatsApp OTP. */
+  verified: number;
   created_at: string;
 }
 

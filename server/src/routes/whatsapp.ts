@@ -26,11 +26,9 @@ whatsappRouter.get('/webhook', (req, res) => {
  */
 whatsappRouter.post('/webhook', (req, res) => {
   res.sendStatus(200);
-  try {
-    processWebhookPayload(req.body);
-  } catch (err) {
+  processWebhookPayload(req.body).catch((err) => {
     console.error('[whatsapp] webhook processing error:', err);
-  }
+  });
 });
 
 /**
@@ -46,7 +44,7 @@ whatsappRouter.post('/simulate', async (req, res) => {
     res.status(400).json({ error: 'from (phone) is required' });
     return;
   }
-  const reply = handleVendorMessage(from, text, name);
+  const reply = await handleVendorMessage(from, text, name);
   await sendWhatsAppMessage(from, reply);
   res.json({ from, text, reply });
 });
@@ -57,7 +55,7 @@ interface WhatsAppTextMessage {
   text?: { body: string };
 }
 
-function processWebhookPayload(body: unknown): void {
+async function processWebhookPayload(body: unknown): Promise<void> {
   const payload = body as {
     entry?: Array<{
       changes?: Array<{
@@ -77,8 +75,8 @@ function processWebhookPayload(body: unknown): void {
       const profileName = value?.contacts?.[0]?.profile?.name;
       for (const message of messages) {
         if (message.type !== 'text' || !message.text?.body) continue;
-        const reply = handleVendorMessage(message.from, message.text.body, profileName);
-        void sendWhatsAppMessage(message.from, reply);
+        const reply = await handleVendorMessage(message.from, message.text.body, profileName);
+        await sendWhatsAppMessage(message.from, reply);
       }
     }
   }

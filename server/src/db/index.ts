@@ -5,11 +5,21 @@ import { config } from '../config.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS vendors (
-  id          TEXT PRIMARY KEY,
-  name        TEXT NOT NULL,
-  phone       TEXT NOT NULL UNIQUE,
-  slug        TEXT NOT NULL UNIQUE,
-  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  id            TEXT PRIMARY KEY,
+  name          TEXT NOT NULL,
+  phone         TEXT NOT NULL UNIQUE,
+  slug          TEXT NOT NULL UNIQUE,
+  password_hash TEXT,
+  verified      INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS otps (
+  phone      TEXT PRIMARY KEY,
+  code_hash  TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  attempts   INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS products (
@@ -64,7 +74,21 @@ export function getDb(): Database.Database {
   instance.pragma('journal_mode = WAL');
   instance.pragma('foreign_keys = ON');
   instance.exec(SCHEMA);
+  runMigrations(instance);
   return instance;
+}
+
+/** Additive migrations for databases created before auth columns existed. */
+function runMigrations(db: Database.Database): void {
+  const columns = (db.prepare('PRAGMA table_info(vendors)').all() as Array<{ name: string }>).map(
+    (c) => c.name,
+  );
+  if (!columns.includes('password_hash')) {
+    db.exec('ALTER TABLE vendors ADD COLUMN password_hash TEXT');
+  }
+  if (!columns.includes('verified')) {
+    db.exec('ALTER TABLE vendors ADD COLUMN verified INTEGER NOT NULL DEFAULT 0');
+  }
 }
 
 /** Test helper: close and reset the singleton so a fresh DB can be opened. */

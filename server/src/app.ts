@@ -2,6 +2,8 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import { config, whatsappLive } from './config.js';
 import { apiRouter } from './routes/api.js';
+import { authRouter } from './routes/auth.js';
+import { meRouter } from './routes/me.js';
 import { paymentsWebhookRouter } from './routes/paymentsWebhook.js';
 import { whatsappRouter } from './routes/whatsapp.js';
 
@@ -19,6 +21,8 @@ export function createApp(): Express {
     });
   });
 
+  app.use('/api/auth', authRouter);
+  app.use('/api/me', meRouter);
   app.use('/api', apiRouter);
   app.use('/whatsapp', whatsappRouter);
   app.use('/webhooks', paymentsWebhookRouter);

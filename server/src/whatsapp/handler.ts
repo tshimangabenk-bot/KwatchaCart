@@ -2,7 +2,8 @@ import { config } from '../config.js';
 import { formatNgwee } from '../lib/money.js';
 import { createProduct, listProducts, removeProduct } from '../services/products.js';
 import { listRecentOrders, orderNumber } from '../services/orders.js';
-import { getOrCreateVendor, renameVendor } from '../services/vendors.js';
+import { getOrCreateVendor, markVendorVerified, renameVendor } from '../services/vendors.js';
+import { checkOtp, hasPendingOtp } from '../services/otp.js';
 import type { Vendor } from '../types.js';
 import { parseCommand } from './parser.js';
 
@@ -27,11 +28,33 @@ function helpText(vendor: Vendor): string {
 }
 
 /**
- * Handle one inbound vendor message. Pure-ish: it mutates the DB via services
- * and returns the reply text (the caller decides how to deliver it).
+ * Handle one inbound vendor message. Mutates the DB via services and returns
+ * the reply text (the caller decides how to deliver it).
  */
-export function handleVendorMessage(fromPhone: string, text: string, profileName?: string): string {
+export async function handleVendorMessage(
+  fromPhone: string,
+  text: string,
+  profileName?: string,
+): Promise<string> {
   const vendor = getOrCreateVendor(fromPhone, profileName);
+
+  // WhatsApp-native verification: a bare numeric code confirms a pending OTP.
+  const trimmed = text.trim();
+  if (/^\d{4,8}$/.test(trimmed) && hasPendingOtp(vendor.phone)) {
+    const result = await checkOtp(vendor.phone, trimmed);
+    if (result === 'ok') {
+      markVendorVerified(vendor.id);
+      return `✅ Your number is verified! You're all set to sell on *${vendor.name}*.\nYour shop link: ${catalogLink(vendor)}`;
+    }
+    if (result === 'expired' || result === 'not_found') {
+      return '⌛ That code has expired. Please request a new one from the app.';
+    }
+    if (result === 'too_many_attempts') {
+      return '🚫 Too many attempts. Please request a new code from the app.';
+    }
+    return '⚠️ That code is incorrect. Please check and try again.';
+  }
+
   const command = parseCommand(text);
 
   switch (command.kind) {

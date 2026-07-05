@@ -48,6 +48,23 @@ large text, massive buttons, big product tiles, and **no cart / no login / no pa
 Flow: **tap a product → enter phone number → tap the giant green "Pay with Mobile Money"
 button**. The bundle is tiny so it loads fast on weak MTN/Airtel edge networks.
 
+### Vendor accounts — sign up / sign in, verified over WhatsApp
+Vendors get a proper web dashboard secured by an account, with verification that
+fits the WhatsApp-first theme:
+
+- **Sign up** with shop name + WhatsApp number + password (`POST /api/auth/signup`).
+  If a vendor already exists (auto-created when they first texted the bot), the
+  password is attached to that *same* account — one identity across WhatsApp & web.
+- **Verify** the phone with a 6-digit **OTP delivered over WhatsApp**. Enter it on
+  the web page *or* just reply to the WhatsApp message with the code — the bot
+  verifies you (`POST /api/auth/verify-otp`).
+- **Sign in** with phone + password (`POST /api/auth/login`) → a JWT session.
+- **Dashboard** (JWT-protected `/api/me/*`): add / hide / delete products, copy the
+  shareable catalog link, and view recent orders.
+
+Passwords are hashed with **bcrypt**; sessions are **JWTs**; OTP codes are hashed at
+rest, expire (default 10 min) and are rate-limited.
+
 ### Phase 3 — Seamless MoMo integration
 Hitting **Pay** creates an order and triggers an **STK / USSD PIN push** on the customer's
 phone via the configured provider. When the customer enters their PIN, the gateway calls
@@ -66,6 +83,7 @@ The web page polls the order status and shows a success / failure screen automat
 | Frontend   | React, Vite, Tailwind CSS v4, React Router                      |
 | Messaging  | WhatsApp Cloud API (Meta) — with a console/simulator fallback   |
 | Payments   | MTN MoMo Collections · PawaPay · in-process Mock (default)      |
+| Auth       | bcrypt password hashing · JWT sessions · WhatsApp OTP verify    |
 | Tests      | Vitest + Supertest                                              |
 
 Amounts are stored as integer **ngwee** (1 Kwacha = 100 ngwee) to avoid float errors.
@@ -82,16 +100,18 @@ kwatchacart/
 │     ├─ index.ts           # server entrypoint
 │     ├─ config.ts          # env-driven config
 │     ├─ db/                # SQLite schema + connection
-│     ├─ lib/               # money, phone, id helpers
-│     ├─ services/          # vendors / products / orders data access
-│     ├─ whatsapp/          # client, parser, command handler
+│     ├─ lib/               # money, phone, id, auth (bcrypt/JWT) helpers
+│     ├─ middleware/        # requireAuth (Bearer JWT guard)
+│     ├─ services/          # vendors / products / orders / auth / otp
+│     ├─ whatsapp/          # client, parser, command handler (+ OTP reply)
 │     ├─ payments/          # provider interface, mock/mtn/pawapay, settlement
-│     └─ routes/            # /api, /whatsapp, /webhooks
-├─ web/                     # React + Vite + Tailwind customer web view
+│     └─ routes/            # /api, /api/auth, /api/me, /whatsapp, /webhooks
+├─ web/                     # React + Vite + Tailwind customer + vendor UI
 │  └─ src/
-│     ├─ api.ts             # typed API client
-│     ├─ pages/             # HomePage, StorefrontPage
-│     └─ components/        # CheckoutSheet, ProductImage
+│     ├─ api.ts             # public storefront API client
+│     ├─ auth.ts            # auth + dashboard API client (token session)
+│     ├─ pages/             # Home, Storefront, Login, Signup, Dashboard
+│     └─ components/        # CheckoutSheet, ProductImage, AuthShell
 └─ package.json             # npm workspaces root
 ```
 
@@ -165,6 +185,16 @@ Key ones:
 | Method & path                 | Description                                               |
 | ----------------------------- | --------------------------------------------------------- |
 | `GET  /health`                | Service status + active WhatsApp/payment modes            |
+| `POST /api/auth/signup`       | Register a vendor (`{shopName,phone,password}`) + send OTP |
+| `POST /api/auth/login`        | Sign in (`{phone,password}`) → `{token,vendor}`           |
+| `POST /api/auth/request-otp`  | (Re)send a WhatsApp verification code (`{phone}`)         |
+| `POST /api/auth/verify-otp`   | Verify the code (`{phone,code}`) → marks account verified |
+| `GET  /api/auth/me`           | Current vendor (Bearer token)                             |
+| `GET  /api/me/products`       | 🔒 List the vendor's products                             |
+| `POST /api/me/products`       | 🔒 Add a product (`{name,price,description?}`)            |
+| `PATCH /api/me/products/:id`  | 🔒 Show/hide a product (`{available}`)                    |
+| `DELETE /api/me/products/:id` | 🔒 Remove a product                                       |
+| `GET  /api/me/orders`         | 🔒 Recent orders for the vendor                           |
 | `GET  /api/shops/:slug`       | Public storefront: shop info + available products         |
 | `GET  /api/products/:id`      | Single product                                            |
 | `POST /api/checkout`          | Create order + trigger MoMo PIN push (`{productId,phone,quantity}`) |
@@ -172,6 +202,8 @@ Key ones:
 | `GET/POST /whatsapp/webhook`  | WhatsApp Cloud API verification / inbound messages        |
 | `POST /whatsapp/simulate`     | Dev-only: simulate an inbound vendor message              |
 | `POST /webhooks/payments`     | Payment gateway settlement callback (secret-protected)    |
+
+🔒 = requires `Authorization: Bearer <jwt>`.
 
 ---
 
