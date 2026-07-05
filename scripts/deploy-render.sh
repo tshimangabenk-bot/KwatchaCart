@@ -26,7 +26,9 @@ REPO="${RENDER_REPO:-https://github.com/tshimangabenk-bot/KwatchaCart}"
 BRANCH="${RENDER_BRANCH:-main}"
 SERVICE_NAME="${SERVICE_NAME:-kwatchacart}"
 REGION="${RENDER_REGION:-oregon}"
-PLAN="${RENDER_PLAN:-starter}"
+# 'free' has no persistent disk (SQLite resets on redeploy). Paid plans
+# (e.g. 'starter') support the /data disk but require billing on the account.
+PLAN="${RENDER_PLAN:-free}"
 
 if [[ -z "${RENDER_API_KEY:-}" ]]; then
   echo "ERROR: RENDER_API_KEY is not set. Export it and retry." >&2
@@ -48,7 +50,11 @@ if [[ -z "${OWNER_ID}" || "${OWNER_ID}" == "null" ]]; then
 fi
 echo "    owner: ${OWNER_ID}"
 
-echo "==> Creating web service '${SERVICE_NAME}' from ${REPO}@${BRANCH}..."
+echo "==> Creating web service '${SERVICE_NAME}' from ${REPO}@${BRANCH} (plan: ${PLAN})..."
+# Only paid plans get a persistent disk; 'free' cannot mount one.
+if [[ "$PLAN" == "free" ]]; then DISK='null'; else
+  DISK='{ "name": "kwatchacart-data", "mountPath": "/data", "sizeGB": 1 }'
+fi
 PAYLOAD="$(jq -n \
   --arg name "$SERVICE_NAME" \
   --arg owner "$OWNER_ID" \
@@ -56,6 +62,7 @@ PAYLOAD="$(jq -n \
   --arg branch "$BRANCH" \
   --arg region "$REGION" \
   --arg plan "$PLAN" \
+  --argjson disk "$DISK" \
   '{
      type: "web_service",
      name: $name,
@@ -63,15 +70,13 @@ PAYLOAD="$(jq -n \
      repo: $repo,
      branch: $branch,
      autoDeploy: "yes",
-     serviceDetails: {
-       runtime: "image",
-       env: "docker",
+     serviceDetails: ({
+       runtime: "docker",
        region: $region,
        plan: $plan,
        healthCheckPath: "/health",
-       envSpecificDetails: { dockerfilePath: "./Dockerfile" },
-       disk: { name: "kwatchacart-data", mountPath: "/data", sizeGB: 1 }
-     },
+       envSpecificDetails: { dockerfilePath: "./Dockerfile" }
+     } + (if $disk == null then {} else { disk: $disk } end)),
      envVars: [
        { key: "SERVE_WEB", value: "true" },
        { key: "DATABASE_PATH", value: "/data/kwatchacart.sqlite" },
