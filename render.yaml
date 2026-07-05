@@ -1,0 +1,38 @@
+# Render.com blueprint — one-click deploy of the single-service app.
+# In the Render dashboard: New > Blueprint, point at this repo.
+# Then set the secret env vars (marked sync:false) in the dashboard.
+services:
+  - type: web
+    name: kwatchacart
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: SERVE_WEB
+        value: 'true'
+      - key: DATABASE_PATH
+        value: /data/kwatchacart.sqlite
+      # PUBLIC_BASE_URL / WEB_BASE_URL are auto-derived from Render's injected
+      # RENDER_EXTERNAL_URL, so no manual URL setup is needed. To use a custom
+      # domain, add PUBLIC_BASE_URL and WEB_BASE_URL here with that URL.
+      # Secrets — auto-generated; no action needed.
+      - key: AUTH_JWT_SECRET
+        generateValue: true
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
+      # Start on the mock payment provider; switch to mtn/pawapay later.
+      - key: PAYMENT_PROVIDER
+        value: mock
+      # WhatsApp: leave unset to run in console mode; fill in to go live.
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_VERIFY_TOKEN
+        value: kwatchacart-verify
+    disk:
+      name: kwatchacart-data
+      mountPath: /data
+      sizeGB: 1
