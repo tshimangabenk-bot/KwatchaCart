@@ -35,15 +35,27 @@ export class MtnMomoProvider implements PaymentProvider {
     const referenceId = randomUUID();
     const token = await this.getAccessToken();
 
+    // Tell MTN where to POST the result so our webhook settles the order.
+    const callbackUrl = `${config.publicBaseUrl}/webhooks/payments?secret=${encodeURIComponent(
+      config.payments.webhookSecret,
+    )}`;
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+      'X-Reference-Id': referenceId,
+      'X-Target-Environment': targetEnvironment,
+      'Ocp-Apim-Subscription-Key': subscriptionKey,
+      'Content-Type': 'application/json',
+    };
+    // MTN only accepts a callback over HTTPS; skip it for local/dev http URLs
+    // (fall back to polling / manual reconciliation in that case).
+    if (config.publicBaseUrl.startsWith('https://')) {
+      headers['X-Callback-Url'] = callbackUrl;
+    }
+
     const res = await fetch(`${baseUrl}/collection/v1_0/requesttopay`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'X-Reference-Id': referenceId,
-        'X-Target-Environment': targetEnvironment,
-        'Ocp-Apim-Subscription-Key': subscriptionKey,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         amount: String(ngweeToKwacha(input.amountNgwee)),
         currency: targetEnvironment === 'sandbox' ? 'EUR' : 'ZMW',

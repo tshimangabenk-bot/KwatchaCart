@@ -20,14 +20,11 @@ ENV NODE_ENV=production \
     SERVE_WEB=true \
     DATABASE_PATH=/data/kwatchacart.sqlite
 
-# Reuse the already-built node_modules (same glibc base) so the native
-# better-sqlite3 binary and all prod deps are present without a rebuild.
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/server/node_modules ./server/node_modules
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/server/package.json ./server/package.json
-COPY --from=builder /app/server/dist ./server/dist
-COPY --from=builder /app/web/dist ./web/dist
+# Copy the whole built workspace from the builder (same glibc base). npm
+# workspaces hoist deps to the root node_modules, so we copy everything to
+# guarantee the native better-sqlite3 binary and all prod deps are present
+# without a rebuild, regardless of how packages were hoisted.
+COPY --from=builder /app ./
 
 # Persist the SQLite database on a mounted volume.
 RUN mkdir -p /data
