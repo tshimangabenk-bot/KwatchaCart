@@ -25,8 +25,14 @@ export type PaymentProviderName = 'mock' | 'mtn' | 'pawapay';
 export const config = {
   port: int('PORT', 4000),
   publicBaseUrl: str('PUBLIC_BASE_URL', 'http://localhost:4000'),
+  // In dev the SPA runs on :5173. In a single-service deploy the backend serves
+  // the SPA itself, so set WEB_BASE_URL to the public origin (see DEPLOY.md).
   webBaseUrl: str('WEB_BASE_URL', 'http://localhost:5173'),
   databasePath: str('DATABASE_PATH', path.resolve(__dirname, '..', 'data', 'kwatchacart.sqlite')),
+
+  // Serve the built web app from Express. 'auto' = serve when web/dist exists.
+  serveWeb: str('SERVE_WEB', 'auto'),
+  webDistPath: str('WEB_DIST_PATH', path.resolve(__dirname, '..', '..', 'web', 'dist')),
 
   whatsapp: {
     token: str('WHATSAPP_TOKEN', ''),

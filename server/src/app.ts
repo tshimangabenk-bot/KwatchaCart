@@ -1,5 +1,7 @@
 import cors from 'cors';
 import express, { type Express } from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
 import { config, whatsappLive } from './config.js';
 import { apiRouter } from './routes/api.js';
 import { authRouter } from './routes/auth.js';
@@ -27,5 +29,39 @@ export function createApp(): Express {
   app.use('/whatsapp', whatsappRouter);
   app.use('/webhooks', paymentsWebhookRouter);
 
+  maybeServeWeb(app);
+
   return app;
+}
+
+/**
+ * Optionally serve the built web SPA from the same Express process, so the
+ * whole product deploys as a single service. Enabled when SERVE_WEB=true, or
+ * SERVE_WEB=auto (default) and a built web/dist is present. API, WhatsApp and
+ * webhook routes are excluded from the SPA history fallback.
+ */
+function maybeServeWeb(app: Express): void {
+  if (config.serveWeb === 'false') return;
+  const indexHtml = path.join(config.webDistPath, 'index.html');
+  if (!fs.existsSync(indexHtml)) {
+    if (config.serveWeb === 'true') {
+      console.warn(`[web] SERVE_WEB=true but no build found at ${config.webDistPath}. Run "npm run build".`);
+    }
+    return;
+  }
+
+  app.use(express.static(config.webDistPath));
+  app.get('*', (req, res, next) => {
+    if (
+      req.path.startsWith('/api') ||
+      req.path.startsWith('/whatsapp') ||
+      req.path.startsWith('/webhooks') ||
+      req.path === '/health'
+    ) {
+      next();
+      return;
+    }
+    res.sendFile(indexHtml);
+  });
+  console.log(`[web] serving SPA from ${config.webDistPath}`);
 }

@@ -207,6 +207,27 @@ Key ones:
 
 ---
 
+## 🚀 Deploy / go live
+
+KwatchaCart deploys as a **single service** — the backend serves the built web
+app (set `SERVE_WEB=true`), so it's one container/process behind one HTTPS URL.
+
+```bash
+# Local production-like run
+npm run build
+NODE_ENV=production SERVE_WEB=true \
+  PUBLIC_BASE_URL=http://localhost:4000 WEB_BASE_URL=http://localhost:4000 \
+  npm start
+# open http://localhost:4000
+
+# Or with Docker
+docker compose up --build   # http://localhost:4000
+```
+
+A `Dockerfile`, `docker-compose.yml` and a Render `render.yaml` blueprint are
+included. See **[DEPLOY.md](./DEPLOY.md)** for full hosting steps and how to wire
+up the WhatsApp Cloud API webhook and the MoMo (MTN/PawaPay) payment callback.
+
 ## 🧪 Tests
 
 ```bash
