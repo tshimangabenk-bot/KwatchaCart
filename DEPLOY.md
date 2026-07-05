@@ -106,6 +106,22 @@ That's a fully working demo. To go live for real, continue to §3 (WhatsApp) and
 > **Custom domain:** add `PUBLIC_BASE_URL` and `WEB_BASE_URL` env vars set to
 > your domain; otherwise the Render URL is used automatically.
 
+### Option B2 — Render via API (scripted, no dashboard clicking)
+
+If you'd rather deploy from a terminal (or have an agent do it), use the included
+script — it creates the service through Render's API:
+
+```bash
+export RENDER_API_KEY=rnd_xxx   # Render → Account Settings → API Keys
+./scripts/deploy-render.sh      # needs curl + jq
+```
+
+It creates a Dockerized web service from `main` with a `/health` check, a 1 GB
+disk at `/data`, auto-generated secrets, and mock/console defaults, then prints
+the service URL. (To have the Cursor Cloud Agent run this for you, add
+`RENDER_API_KEY` in the Cursor Dashboard → Cloud Agents → Secrets, then start a
+new agent run — secrets are injected into new runs only.)
+
 ### Option C — Railway / Fly.io / VPS
 
 Any Docker host works. Point it at the `Dockerfile`, expose port `4000`, set the
